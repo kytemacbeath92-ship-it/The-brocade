@@ -3,19 +3,12 @@ import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { BookCover } from '@/components/book-cover';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, ProgressBar, Screen, SectionHeader } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import {
-  APP_NAME,
-  APP_SUBTITLE,
-  APP_TAGLINE,
-  articleById,
-  articles,
-  broOfTheDayId,
-  categoryById,
-} from '@/data/articles';
+import { articleById, articles, broOfTheDayId, categoryById } from '@/data/articles';
 import { useAppState } from '@/state/store';
 
 export default function HomeScreen() {
@@ -36,17 +29,7 @@ export default function HomeScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <ThemedText type="small" style={{ color: theme.tint, letterSpacing: 2 }}>
-            {APP_SUBTITLE.toUpperCase()}
-          </ThemedText>
-          <ThemedText type="title" style={styles.heroTitle}>
-            {APP_NAME}
-          </ThemedText>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            {APP_TAGLINE}
-          </ThemedText>
-        </View>
+        <BookCover />
 
         <Card>
           <SectionHeader title="Your progress" />
@@ -168,8 +151,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.six,
     gap: Spacing.four,
   },
-  hero: { gap: Spacing.one, paddingTop: Spacing.two },
-  heroTitle: { marginVertical: 2 },
   progressRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.two, marginBottom: Spacing.two },
   botdHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   botdBadge: {
