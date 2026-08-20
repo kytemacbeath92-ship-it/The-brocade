@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { BookCover } from '@/components/book-cover';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, ProgressBar, Screen, SectionHeader } from '@/components/ui';
+import { Card, ProgressBar, Screen, SectionHeader } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { articleById, articles, broOfTheDayId, categoryById } from '@/data/articles';
@@ -23,13 +23,12 @@ export default function HomeScreen() {
   const botdId = useMemo(() => broOfTheDayId(), []);
   const botd = articleById.get(botdId)!;
 
-  const continueId = lastReadId ?? 1;
-  const continueArticle = articleById.get(continueId)!;
+  const openBook = () => router.push(lastReadId ? `/article/${lastReadId}` : '/intro');
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <BookCover />
+        <BookCover onPress={openBook} />
 
         <Card>
           <SectionHeader title="Your progress" />
@@ -40,19 +39,12 @@ export default function HomeScreen() {
             </ThemedText>
           </View>
           <ProgressBar value={progress} />
-          <View style={{ height: Spacing.three }} />
-          <Button
-            label={lastReadId ? `Continue: Article ${continueArticle.id}` : 'Start with Article 1'}
-            icon="play"
-            onPress={() => router.push(`/article/${continueId}`)}
-          />
           <View style={{ height: Spacing.two }} />
-          <Button
-            label="Read the Introduction"
-            icon="book-outline"
-            variant="secondary"
-            onPress={() => router.push('/intro')}
-          />
+          <ThemedText type="small" style={{ color: theme.textSecondary }}>
+            {lastReadId
+              ? `Tap the book to continue at Article ${lastReadId}.`
+              : 'Tap the book to open the Introduction.'}
+          </ThemedText>
         </Card>
 
         <View>
@@ -101,10 +93,10 @@ export default function HomeScreen() {
               onPress={() => router.push('/code')}
             />
             <QuickAction
-              icon="compass"
-              label="Guided Paths"
-              hint="Curated journeys"
-              onPress={() => router.push('/paths')}
+              icon="book-outline"
+              label="Introduction"
+              hint="Page 1"
+              onPress={() => router.push('/intro')}
             />
           </View>
         </View>

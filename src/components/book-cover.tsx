@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { APP_NAME, APP_SUBTITLE, APP_TAGLINE } from '@/data/articles';
@@ -14,10 +14,16 @@ const EMBOSS = 'rgba(0,0,0,0.45)';
  * A red leather-bound hardcover book cover with gold, embossed lettering.
  * Colors are fixed (not theme-driven) so the cover always reads as a physical book.
  */
-export function BookCover() {
+export function BookCover({ onPress }: { onPress?: () => void }) {
   return (
     <View style={styles.wrap}>
-      <View style={styles.book}>
+      <Pressable
+        onPress={onPress}
+        disabled={!onPress}
+        accessibilityRole="button"
+        accessibilityLabel="Open The Bro Code"
+        style={({ pressed }) => [styles.book, pressed && onPress ? styles.bookPressed : null]}
+      >
         {/* Leather body */}
         <LinearGradient
           colors={['#9A2020', '#7A1414', '#500B0B']}
@@ -59,11 +65,14 @@ export function BookCover() {
 
               <ThemedText style={styles.tagline}>{APP_TAGLINE}</ThemedText>
 
-              <ThemedText style={styles.est}>EST. MMXXVI</ThemedText>
+              <View style={styles.openHint}>
+                <ThemedText style={styles.openHintText}>TAP TO OPEN</ThemedText>
+                <Ionicons name="chevron-forward" size={11} color={GOLD_BRIGHT} />
+              </View>
             </View>
           </View>
         </View>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -95,6 +104,7 @@ const styles = StyleSheet.create({
     shadowRadius: 22,
     elevation: 12,
   },
+  bookPressed: { transform: [{ scale: 0.985 }], opacity: 0.96 },
   spine: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 26 },
   spineRule: {
     position: 'absolute',
@@ -166,13 +176,22 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
-  est: {
-    color: GOLD_DEEP,
-    fontSize: 11,
-    letterSpacing: 3,
-    textAlign: 'center',
-    fontWeight: '600',
-    marginTop: 2,
+  openHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: GOLD_DEEP,
+  },
+  openHintText: {
+    color: GOLD_BRIGHT,
+    fontSize: 10,
+    letterSpacing: 2.5,
+    fontWeight: '700',
   },
   ornament: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', justifyContent: 'center' },
   ornamentLine: { height: 1, width: 48, backgroundColor: GOLD_DEEP },
