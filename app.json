@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "The Bro Code",
+    "slug": "the-bro-code",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "brocode",
+    "userInterfaceStyle": "automatic",
+    "description": "A Gentleman’s Guide to Mateship — 70 Articles of Loyalty, Class and Broship.",
+    "primaryColor": "#D4AF37",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thebrocode.app",
+      "icon": "./assets/expo.icon"
+    },
+    "android": {
+      "package": "com.thebrocode.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#4A0C0C",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png",
+      "name": "The Bro Code",
+      "themeColor": "#4A0C0C",
+      "backgroundColor": "#4A0C0C"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-av",
+      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#4A0C0C",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 96
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false,
+      "reactCompiler": true
+    }
+  }
+}
