@@ -23,7 +23,9 @@ import { CoverButton } from '@/components/cover-button';
 import { HardcoverEdge, useCoverOpenClip, useCoverOpenInner } from '@/components/cover-board';
 import { IntroPage } from '@/components/intro-page';
 import { COVER_EASING, PAGE_TURN_MS } from '@/constants/motion';
+import { isCoverEntryPath, isIntroPath, PAGE_ONE_HREF } from '@/lib/book-session';
 import { playCoverChoir } from '@/lib/sounds';
+import { stopSpeaking } from '@/lib/tts';
 
 type CoverMode = 'closed' | 'opening' | 'open' | 'closing';
 
@@ -31,12 +33,14 @@ type CoverApi = {
   mode: CoverMode;
   closeBook: () => void;
   openToArticle: (id: number) => void;
+  sessionId: number;
 };
 
 const CoverContext = createContext<CoverApi>({
   mode: 'closed',
   closeBook: () => {},
   openToArticle: () => {},
+  sessionId: 0,
 });
 
 export function useCover() {
@@ -58,27 +62,39 @@ function waitFrames(n: number) {
   });
 }
 
-function isIntroPath(path: string) {
-  return path === '/intro' || path.endsWith('/intro');
-}
-
-function isCoverEntry(path: string) {
-  return path === '/' || isIntroPath(path);
-}
-
 export function CoverProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { width, height } = useWindowDimensions();
-  const [mode, setMode] = useState<CoverMode>(() => (isCoverEntry(pathname) ? 'closed' : 'open'));
+  const [mode, setMode] = useState<CoverMode>(() => (isCoverEntryPath(pathname) ? 'closed' : 'open'));
   const modeRef = useRef(mode);
+  const pathnameRef = useRef(pathname);
   const busy = useRef(false);
   const openAmount = useSharedValue(mode === 'open' ? 1 : 0);
-  const [revealIntro, setRevealIntro] = useState(() => isCoverEntry(pathname));
+  const [revealIntro, setRevealIntro] = useState(() => isCoverEntryPath(pathname));
+  const [sessionId, setSessionId] = useState(0);
 
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  const goToIntro = useCallback(() => {
+    if (isIntroPath(pathnameRef.current)) return;
+    if (router.canDismiss()) {
+      router.dismissTo(PAGE_ONE_HREF);
+      return;
+    }
+    router.replace(PAGE_ONE_HREF);
+  }, [router]);
+
+  const resetToPageOne = useCallback(() => {
+    setSessionId((n) => n + 1);
+    goToIntro();
+  }, [goToIntro]);
 
   const finishOpen = useCallback(() => {
     setMode('open');
@@ -86,9 +102,12 @@ export function CoverProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const finishClose = useCallback(() => {
+    // Cover is fully shut: drop the previous reading position so the next
+    // cover-open starts at page 1. Continue on the cover still uses lastReadId.
+    resetToPageOne();
     setMode('closed');
     busy.current = false;
-  }, []);
+  }, [resetToPageOne]);
 
   const startOpen = useCallback(
     (withIntro: boolean) => {
@@ -109,6 +128,7 @@ export function CoverProvider({ children }: { children: ReactNode }) {
 
   const closeBook = useCallback(() => {
     if (busy.current || modeRef.current !== 'open') return;
+    stopSpeaking();
     busy.current = true;
     const withIntro = isIntroPath(pathname);
     setRevealIntro(withIntro);
@@ -119,20 +139,11 @@ export function CoverProvider({ children }: { children: ReactNode }) {
     });
   }, [finishClose, openAmount, pathname]);
 
-  const goToIntro = useCallback(() => {
-    if (isIntroPath(pathname)) return;
-    if (router.canDismiss()) {
-      router.dismissTo('/intro');
-      return;
-    }
-    router.replace('/intro');
-  }, [pathname, router]);
-
   const openBook = useCallback(() => {
     if (busy.current || modeRef.current !== 'closed') return;
     playCoverChoir();
     busy.current = true;
-    const alreadyIntro = isIntroPath(pathname);
+    const alreadyIntro = isIntroPath(pathnameRef.current);
     goToIntro();
     if (alreadyIntro) {
       startOpen(true);
@@ -142,7 +153,7 @@ export function CoverProvider({ children }: { children: ReactNode }) {
       await waitFrames(2);
       startOpen(true);
     })();
-  }, [goToIntro, pathname, startOpen]);
+  }, [goToIntro, startOpen]);
 
   const openToArticle = useCallback(
     (id: number) => {
@@ -172,8 +183,8 @@ export function CoverProvider({ children }: { children: ReactNode }) {
   const introInner = useCoverOpenInner(openAmount, width, 'intro');
 
   const api = useMemo(
-    () => ({ mode, closeBook, openToArticle }),
-    [closeBook, mode, openToArticle],
+    () => ({ mode, closeBook, openToArticle, sessionId }),
+    [closeBook, mode, openToArticle, sessionId],
   );
 
   return (
@@ -190,7 +201,11 @@ export function CoverProvider({ children }: { children: ReactNode }) {
             {showIntroLeaf ? (
               <Animated.View style={[styles.clip, { top: 0, height }, introClip]}>
                 <Animated.View style={[{ width, height }, introInner]}>
-                  <IntroPage interactive={false} headerRight={<CoverButton onPress={closeBook} />} />
+                  <IntroPage
+                    key={sessionId}
+                    interactive={false}
+                    headerRight={<CoverButton onPress={closeBook} />}
+                  />
                 </Animated.View>
               </Animated.View>
             ) : null}
