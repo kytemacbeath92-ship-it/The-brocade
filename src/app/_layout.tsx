@@ -16,8 +16,18 @@ import {
 } from '@/lib/notifications';
 import { CoverProvider, useCover } from '@/state/cover';
 import { AppStateProvider, useAppState } from '@/state/store';
+import { primeSounds, setSoundEnabled } from '@/lib/sounds';
 
 configureNotificationHandler();
+
+function SoundSync() {
+  const { settings } = useAppState();
+  useEffect(() => {
+    setSoundEnabled(settings.soundOn);
+    void primeSounds();
+  }, [settings.soundOn]);
+  return null;
+}
 
 function NotificationBridge() {
   const router = useRouter();
@@ -103,6 +113,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: Leather.deep }}>
       <AppStateProvider>
+        <SoundSync />
         <RootNavigator />
       </AppStateProvider>
     </GestureHandlerRootView>

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import { broOfTheDayId } from '@/data/articles';
 import { localizeArticle, localizeArticles } from '@/i18n/localize';
 import { LANGUAGES } from '@/i18n/languages';
 import { useI18n } from '@/i18n/use-i18n';
+import { primeSounds, setSoundEnabled, unlockAudio } from '@/lib/sounds';
 import { useAppState } from '@/state/store';
 
 export function CoverArt({
@@ -24,6 +25,11 @@ export function CoverArt({
   const { t, lang } = useI18n();
   const { lastReadId, settings, updateSettings } = useAppState();
   const [langOpen, setLangOpen] = useState(false);
+
+  useEffect(() => {
+    setSoundEnabled(settings.soundOn);
+    void primeSounds();
+  }, [settings.soundOn]);
 
   const todaysId = useMemo(() => broOfTheDayId(), []);
   const todaysArticle = useMemo(() => {
@@ -61,7 +67,10 @@ export function CoverArt({
         ]}
       >
         <Pressable
-          onPress={onOpenBook}
+          onPress={() => {
+            unlockAudio();
+            onOpenBook();
+          }}
           style={StyleSheet.absoluteFill}
           accessibilityRole="button"
           accessibilityLabel={t('tapAnywhere')}
@@ -81,7 +90,12 @@ export function CoverArt({
             </Pressable>
 
             <Pressable
-              onPress={() => updateSettings({ soundOn: !settings.soundOn })}
+              onPress={() => {
+                const next = !settings.soundOn;
+                setSoundEnabled(next);
+                updateSettings({ soundOn: next });
+                if (next) unlockAudio();
+              }}
               style={({ pressed }) => [styles.soundButton, pressed && styles.pressed]}
               accessibilityRole="button"
               accessibilityLabel={settings.soundOn ? t('soundOn') : t('soundOff')}
@@ -97,7 +111,12 @@ export function CoverArt({
             </Pressable>
           </View>
 
-          <Pressable onPress={onOpenBook} style={styles.hero} accessibilityRole="button" accessibilityLabel={t('tapAnywhere')}>
+          <Pressable
+            onPress={() => {
+              unlockAudio();
+              onOpenBook();
+            }}
+            style={styles.hero} accessibilityRole="button" accessibilityLabel={t('tapAnywhere')}>
             <ThemedText type="small" style={[styles.goldText, styles.subtitle]}>
               {t('subtitle')}
             </ThemedText>
@@ -110,7 +129,14 @@ export function CoverArt({
           </Pressable>
 
           <View style={styles.bottomBlock}>
-            <Pressable onPress={onOpenBook} accessibilityRole="button" accessibilityLabel={t('tapAnywhere')}>
+            <Pressable
+              onPress={() => {
+                unlockAudio();
+                onOpenBook();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('tapAnywhere')}
+            >
               <ThemedText type="goldCursive" style={styles.tapHint}>
                 {t('tapAnywhere')}
               </ThemedText>
@@ -130,7 +156,10 @@ export function CoverArt({
 
             {todaysArticle ? (
               <Pressable
-                onPress={() => onOpenArticle(todaysArticle.id)}
+                onPress={() => {
+                  unlockAudio();
+                  onOpenArticle(todaysArticle.id);
+                }}
                 style={({ pressed }) => [styles.ruleStrip, pressed && styles.pressed]}
                 accessibilityRole="button"
                 accessibilityLabel={`${t('todaysRule')}: ${todaysArticle.title}`}
@@ -146,7 +175,10 @@ export function CoverArt({
 
             {lastReadId ? (
               <Pressable
-                onPress={() => onOpenArticle(lastReadId)}
+                onPress={() => {
+                  unlockAudio();
+                  onOpenArticle(lastReadId);
+                }}
                 style={({ pressed }) => [styles.continueBtn, pressed && styles.pressed]}
                 accessibilityRole="button"
                 accessibilityLabel={t('continueWhereYouLeftOff')}

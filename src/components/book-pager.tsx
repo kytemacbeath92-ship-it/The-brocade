@@ -30,6 +30,7 @@ import {
 } from '@/components/page-turn-stage';
 import { PAGE_TURN_EASING, PAGE_TURN_MS } from '@/constants/motion';
 import { useTheme } from '@/hooks/use-theme';
+import { playPageTurn, unlockAudio } from '@/lib/sounds';
 
 type PagerApi = {
   turn: (dir: TurnDirection) => void;
@@ -73,19 +74,16 @@ export function BookPager({ currentId, prevId, nextId, renderPage, onSettled }: 
   const busyRef = useRef(false);
 
   useEffect(() => {
-    if (!turn) {
-      progress.value = 0;
-      return;
-    }
+    if (!turn) return;
     const settledId = turn.to;
     const done = () => {
       onSettled(settledId);
       requestAnimationFrame(() => {
         busyRef.current = false;
+        progress.value = 0;
         setTurn(null);
       });
     };
-    progress.value = 0;
     progress.value = withTiming(1, { duration: PAGE_TURN_MS, easing }, (finished) => {
       if (finished) runOnJS(done)();
     });
@@ -96,6 +94,7 @@ export function BookPager({ currentId, prevId, nextId, renderPage, onSettled }: 
       if (busyRef.current) return;
       const to = dir === 'next' ? nextId : prevId;
       if (to == null) return;
+      playPageTurn(dir);
       busyRef.current = true;
       setTurn({ dir, from: currentId, to, prev: prevId, next: nextId });
     },
@@ -155,6 +154,7 @@ export function BookPager({ currentId, prevId, nextId, renderPage, onSettled }: 
         <View
           style={[styles.fill, { backgroundColor: theme.background }]}
           onLayout={onLayout}
+          onTouchStart={unlockAudio}
           collapsable={false}
         >
           {ready

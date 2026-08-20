@@ -61,7 +61,7 @@ export function FoldShade({
     const p = progress.value;
     const fold = isNext ? (1 - p) * width : p * width;
     return {
-      opacity: interpolate(p, [0, 0.08, 0.86, 1], [0, 0.55, 0.4, 0]),
+      opacity: interpolate(p, [0, 0.1, 0.88, 1], [0, 0.42, 0.32, 0]),
       left: fold - (isNext ? 18 : 0),
     };
   }, [isNext, width]);
@@ -100,11 +100,11 @@ export function PageCurl({
   const curlStyle = useAnimatedStyle(() => {
     const p = progress.value;
     const fold = isNext ? (1 - p) * width : p * width;
-    const curlW = Math.max(10, Math.sin(Math.PI * p) * width * 0.22);
-    const lift = interpolate(p, [0, 0.22, 0.7, 1], [0, isNext ? -18 : 18, isNext ? -8 : 8, 0]);
-    const yaw = interpolate(p, [0, 0.55, 1], [0, isNext ? -72 : 72, isNext ? -96 : 96]);
+    const curlW = Math.max(12, Math.sin(Math.PI * p) * width * 0.18);
+    const lift = interpolate(p, [0, 0.12, 0.48, 0.82, 1], [0, isNext ? -8 : 8, isNext ? -13 : 13, isNext ? -6 : 6, 0]);
+    const yaw = interpolate(p, [0, 0.3, 0.68, 1], [0, isNext ? -36 : 36, isNext ? -68 : 68, isNext ? -86 : 86]);
     return {
-      opacity: interpolate(p, [0, 0.04, 0.88, 1], [0, 1, 1, 0]),
+      opacity: interpolate(p, [0, 0.05, 0.92, 1], [0, 1, 1, 0]),
       width: curlW,
       left: isNext ? fold - curlW : fold,
       transform: [{ perspective: 1800 }, { rotateZ: `${lift}deg` }, { rotateY: `${yaw}deg` }],

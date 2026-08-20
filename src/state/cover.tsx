@@ -23,6 +23,7 @@ import { CoverButton } from '@/components/cover-button';
 import { HardcoverEdge, useCoverOpenClip, useCoverOpenInner } from '@/components/cover-board';
 import { IntroPage } from '@/components/intro-page';
 import { COVER_EASING, PAGE_TURN_MS } from '@/constants/motion';
+import { playCoverChoir } from '@/lib/sounds';
 
 type CoverMode = 'closed' | 'opening' | 'open' | 'closing';
 
@@ -129,6 +130,7 @@ export function CoverProvider({ children }: { children: ReactNode }) {
 
   const openBook = useCallback(() => {
     if (busy.current || modeRef.current !== 'closed') return;
+    playCoverChoir();
     busy.current = true;
     const alreadyIntro = isIntroPath(pathname);
     goToIntro();
@@ -149,6 +151,7 @@ export function CoverProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (busy.current || modeRef.current !== 'closed') return;
+      playCoverChoir();
       busy.current = true;
       router.push(`/article/${id}`);
       void (async () => {
