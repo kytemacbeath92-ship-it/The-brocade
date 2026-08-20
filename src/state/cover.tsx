@@ -182,8 +182,10 @@ export function CoverProvider({ children }: { children: ReactNode }) {
         {children}
         {overlayVisible ? (
           <Animated.View
-            pointerEvents={mode === 'closed' ? 'auto' : 'none'}
-            style={[styles.overlay, { width, height }]}
+            style={[
+              styles.overlay,
+              { width, height, pointerEvents: mode === 'closed' ? 'auto' : 'none' },
+            ]}
           >
             <Animated.View style={[styles.clip, { top: 0, height }, coverClip]}>
               <Animated.View style={[{ width, height }, coverInner]}>

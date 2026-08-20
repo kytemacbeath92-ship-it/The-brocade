@@ -67,7 +67,7 @@ export function FoldShade({
   }, [isNext, width]);
 
   return (
-    <Animated.View pointerEvents="none" style={[styles.fold, { height, width: 18 }, style]}>
+    <Animated.View style={[styles.fold, { height, width: 18, pointerEvents: 'none' }, style]}>
       <LinearGradient
         colors={
           isNext
@@ -113,7 +113,6 @@ export function PageCurl({
 
   return (
     <Animated.View
-      pointerEvents="none"
       style={[
         styles.curl,
         {
@@ -121,6 +120,7 @@ export function PageCurl({
           backgroundColor: versoColor,
           transformOrigin: isNext ? 'top right' : 'top left',
           zIndex: 5,
+          pointerEvents: 'none',
         },
         curlStyle,
       ]}

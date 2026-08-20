@@ -237,8 +237,7 @@ function PageSlot({
 
   return (
     <Animated.View
-      pointerEvents={role === 'current' ? 'auto' : 'none'}
-      style={[styles.clip, { backgroundColor: pageColor }, clipStyle]}
+      style={[styles.clip, { backgroundColor: pageColor, pointerEvents: role === 'current' ? 'auto' : 'none' }, clipStyle]}
       collapsable={false}
     >
       <Animated.View style={[styles.inner, { width, height }, innerStyle]} collapsable={false}>

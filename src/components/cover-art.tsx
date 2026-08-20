@@ -214,6 +214,7 @@ const styles = StyleSheet.create({
     borderColor: Gold.foil,
     borderRadius: 10,
     padding: 4,
+    pointerEvents: 'box-none',
   },
   innerFrame: {
     flex: 1,
@@ -224,6 +225,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.two,
     paddingBottom: Spacing.three,
     justifyContent: 'space-between',
+    pointerEvents: 'box-none',
   },
   topBar: {
     flexDirection: 'row',
@@ -231,6 +233,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.two,
     zIndex: 2,
+    pointerEvents: 'box-none',
   },
   langButton: {
     flexDirection: 'row',
