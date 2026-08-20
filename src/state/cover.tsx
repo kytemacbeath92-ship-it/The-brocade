@@ -9,20 +9,20 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { InteractionManager, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
-  useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
 
 import { CoverArt } from '@/components/cover-art';
-import { FoldShade, PageCurl } from '@/components/page-turn-stage';
-import { PAGE_TURN_EASING, PAGE_TURN_MS } from '@/constants/motion';
-import { Leather } from '@/constants/theme';
+import { CoverButton } from '@/components/cover-button';
+import { HardcoverEdge, useCoverOpenClip, useCoverOpenInner } from '@/components/cover-board';
+import { IntroPage } from '@/components/intro-page';
+import { COVER_EASING, PAGE_TURN_MS } from '@/constants/motion';
 
 type CoverMode = 'closed' | 'opening' | 'open' | 'closing';
 
@@ -42,27 +42,27 @@ export function useCover() {
   return useContext(CoverContext);
 }
 
-const easing = Easing.bezier(
-  PAGE_TURN_EASING[0],
-  PAGE_TURN_EASING[1],
-  PAGE_TURN_EASING[2],
-  PAGE_TURN_EASING[3],
-);
+const easing = Easing.bezier(COVER_EASING[0], COVER_EASING[1], COVER_EASING[2], COVER_EASING[3]);
 
-function waitForPaint() {
+function waitFrames(n: number) {
   return new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        InteractionManager.runAfterInteractions(() => {
-          setTimeout(resolve, 40);
-        });
-      });
-    });
+    const tick = (left: number) => {
+      if (left <= 0) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(() => tick(left - 1));
+    };
+    tick(n);
   });
 }
 
+function isIntroPath(path: string) {
+  return path === '/intro' || path.endsWith('/intro');
+}
+
 function isCoverEntry(path: string) {
-  return path === '/' || path === '/code' || path.endsWith('/code');
+  return path === '/' || isIntroPath(path);
 }
 
 export function CoverProvider({ children }: { children: ReactNode }) {
@@ -72,9 +72,8 @@ export function CoverProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<CoverMode>(() => (isCoverEntry(pathname) ? 'closed' : 'open'));
   const modeRef = useRef(mode);
   const busy = useRef(false);
-  const progress = useSharedValue(0);
-  /** 0 closed, 1 opening (peel next/top-right), 2 closing (leaf in from top-left). */
-  const phase = useSharedValue(0);
+  const openAmount = useSharedValue(mode === 'open' ? 1 : 0);
+  const [revealIntro, setRevealIntro] = useState(() => isCoverEntry(pathname));
 
   useEffect(() => {
     modeRef.current = mode;
@@ -86,57 +85,62 @@ export function CoverProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const finishClose = useCallback(() => {
-    phase.value = 0;
-    progress.value = 0;
     setMode('closed');
     busy.current = false;
-  }, [phase, progress]);
+  }, []);
 
-  useEffect(() => {
-    if (mode !== 'opening' && mode !== 'closing') return;
-    const done = () => {
-      if (mode === 'opening') finishOpen();
-      else finishClose();
-    };
-    progress.value = withTiming(1, { duration: PAGE_TURN_MS, easing }, (finished) => {
-      if (finished) runOnJS(done)();
-    });
-  }, [finishClose, finishOpen, mode, progress]);
-
-  const startOpen = useCallback(async () => {
-    if (busy.current || modeRef.current !== 'closed') return;
-    busy.current = true;
-    await waitForPaint();
-    if (modeRef.current !== 'closed') {
-      busy.current = false;
-      return;
-    }
-    progress.value = 0;
-    phase.value = 1;
-    setMode('opening');
-  }, [phase, progress]);
+  const startOpen = useCallback(
+    (withIntro: boolean) => {
+      if (modeRef.current !== 'closed') {
+        busy.current = false;
+        return;
+      }
+      busy.current = true;
+      setRevealIntro(withIntro);
+      openAmount.value = 0;
+      setMode('opening');
+      openAmount.value = withTiming(1, { duration: PAGE_TURN_MS, easing }, (finished) => {
+        if (finished) runOnJS(finishOpen)();
+      });
+    },
+    [finishOpen, openAmount],
+  );
 
   const closeBook = useCallback(() => {
     if (busy.current || modeRef.current !== 'open') return;
     busy.current = true;
-    progress.value = 0;
-    phase.value = 2;
+    const withIntro = isIntroPath(pathname);
+    setRevealIntro(withIntro);
+    openAmount.value = 1;
     setMode('closing');
-  }, [phase, progress]);
+    openAmount.value = withTiming(0, { duration: PAGE_TURN_MS, easing }, (finished) => {
+      if (finished) runOnJS(finishClose)();
+    });
+  }, [finishClose, openAmount, pathname]);
 
-  const goToCode = useCallback(() => {
+  const goToIntro = useCallback(() => {
+    if (isIntroPath(pathname)) return;
     if (router.canDismiss()) {
-      router.dismissTo('/code');
+      router.dismissTo('/intro');
       return;
     }
-    router.replace('/code');
-  }, [router]);
+    router.replace('/intro');
+  }, [pathname, router]);
 
   const openBook = useCallback(() => {
     if (busy.current || modeRef.current !== 'closed') return;
-    goToCode();
-    void startOpen();
-  }, [goToCode, startOpen]);
+    busy.current = true;
+    const alreadyIntro = isIntroPath(pathname);
+    goToIntro();
+    if (alreadyIntro) {
+      startOpen(true);
+      return;
+    }
+    void (async () => {
+      await waitFrames(2);
+      startOpen(true);
+    })();
+  }, [goToIntro, pathname, startOpen]);
 
   const openToArticle = useCallback(
     (id: number) => {
@@ -145,31 +149,24 @@ export function CoverProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (busy.current || modeRef.current !== 'closed') return;
+      busy.current = true;
       router.push(`/article/${id}`);
-      void startOpen();
+      void (async () => {
+        await waitFrames(2);
+        startOpen(false);
+      })();
     },
     [router, startOpen],
   );
 
   const overlayVisible = mode !== 'open';
   const turning = mode === 'opening' || mode === 'closing';
-  const curlDirection = mode === 'closing' ? 'prev' : 'next';
+  const showIntroLeaf = overlayVisible && revealIntro;
 
-  const coverClip = useAnimatedStyle(() => {
-    const p = progress.value;
-    const ph = phase.value;
-    if (ph === 1) {
-      return { left: 0, width: Math.max(0, (1 - p) * width), opacity: 1 };
-    }
-    if (ph === 2) {
-      return { left: 0, width: Math.max(0, p * width), opacity: 1 };
-    }
-    return { left: 0, width, opacity: 1 };
-  }, [width]);
-
-  const coverInner = useAnimatedStyle(() => ({
-    transform: [{ translateX: 0 }],
-  }));
+  const coverClip = useCoverOpenClip(openAmount, width, 'cover');
+  const coverInner = useCoverOpenInner(openAmount, width, 'cover');
+  const introClip = useCoverOpenClip(openAmount, width, 'intro');
+  const introInner = useCoverOpenInner(openAmount, width, 'intro');
 
   const api = useMemo(
     () => ({ mode, closeBook, openToArticle }),
@@ -181,35 +178,34 @@ export function CoverProvider({ children }: { children: ReactNode }) {
       <View style={styles.root}>
         {children}
         {overlayVisible ? (
-          <Animated.View
+          <View
             style={[
               styles.overlay,
               { width, height, pointerEvents: mode === 'closed' ? 'auto' : 'none' },
             ]}
           >
-            <Animated.View style={[styles.clip, { top: 0, height }, coverClip]}>
-              <Animated.View style={[{ width, height }, coverInner]}>
+            {showIntroLeaf ? (
+              <Animated.View style={[styles.clip, { top: 0, height }, introClip]}>
+                <Animated.View style={[{ width, height }, introInner]}>
+                  <IntroPage interactive={false} headerRight={<CoverButton onPress={closeBook} />} />
+                </Animated.View>
+              </Animated.View>
+            ) : null}
+            <Animated.View
+              style={[
+                styles.clip,
+                { top: 0, height, transformOrigin: 'left center' },
+                coverClip,
+              ]}
+            >
+              <Animated.View
+                style={[{ width, height, transformOrigin: 'left center' }, coverInner]}
+              >
                 <CoverArt onOpenBook={openBook} onOpenArticle={openToArticle} />
               </Animated.View>
             </Animated.View>
-            {turning ? (
-              <>
-                <FoldShade
-                  progress={progress}
-                  direction={curlDirection}
-                  width={width}
-                  height={height}
-                />
-                <PageCurl
-                  progress={progress}
-                  direction={curlDirection}
-                  width={width}
-                  height={height}
-                  versoColor={Leather.mid}
-                />
-              </>
-            ) : null}
-          </Animated.View>
+            {turning ? <HardcoverEdge openAmount={openAmount} width={width} height={height} /> : null}
+          </View>
         ) : null}
       </View>
     </CoverContext.Provider>

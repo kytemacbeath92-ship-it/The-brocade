@@ -89,7 +89,7 @@ function RootNavigator() {
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="intro" options={{ title: t('introduction') }} />
+          <Stack.Screen name="intro" options={{ headerShown: false }} />
           <Stack.Screen name="article/[id]" options={{ title: '' }} />
           <Stack.Screen name="ask" options={{ title: t('askABro'), presentation: 'modal' }} />
           <Stack.Screen name="glance" options={{ title: t('theCode'), presentation: 'modal' }} />

@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 
-/** Interior routes mount under the cover overlay so opening does not flash a blank stack. */
+/** Intro mounts under the cover overlay so opening reveals it without a route flash. */
 export default function CoverRedirect() {
-  return <Redirect href="/code" />;
+  return <Redirect href="/intro" />;
 }
