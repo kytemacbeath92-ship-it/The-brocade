@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Platform, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { Fonts, Gold, Leather } from '@/constants/theme';
 import { useI18n } from '@/i18n/use-i18n';
+import { useCover } from '@/state/cover';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const { closeBook } = useCover();
   const { t } = useI18n();
 
   // Let the navigator own the home-indicator inset. Adding a second large pad
@@ -34,7 +35,7 @@ export default function TabsLayout() {
         ),
         headerLeft: () => (
           <Pressable
-            onPress={() => router.replace('/')}
+            onPress={closeBook}
             style={styles.coverHit}
             accessibilityRole="button"
             accessibilityLabel={t('cover')}

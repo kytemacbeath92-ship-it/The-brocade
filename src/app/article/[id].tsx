@@ -1,75 +1,74 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
+import { ArticlePage } from '@/components/article-page';
+import { BookPager } from '@/components/book-pager';
 import { ThemedText } from '@/components/themed-text';
 import { IconButton, Screen } from '@/components/ui';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Gold, Spacing } from '@/constants/theme';
 import { articleById, articles } from '@/data/articles';
-import { localizeArticle, localizeCategory } from '@/i18n/localize';
+import { localizeArticle } from '@/i18n/localize';
 import { useI18n } from '@/i18n/use-i18n';
-import { shareText } from '@/lib/share';
-import { isTtsAvailable, speak, stopSpeaking } from '@/lib/tts';
-import { useAppState } from '@/state/store';
+import { useCover } from '@/state/cover';
+
+function ArticleCoverButton() {
+  const { closeBook } = useCover();
+  const { t } = useI18n();
+  return (
+    <Pressable
+      onPress={closeBook}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 6 }}
+      accessibilityRole="button"
+      accessibilityLabel={t('cover')}
+    >
+      <Ionicons name="book" size={18} color={Gold.bright} />
+      <ThemedText type="smallBold" style={{ color: Gold.bright }}>
+        {t('cover')}
+      </ThemedText>
+    </Pressable>
+  );
+}
 
 export default function ArticleScreen() {
-  const theme = useTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const articleId = Number(id);
-  const { t, lang, speech } = useI18n();
-  const base = articleById.get(articleId);
-  const article = useMemo(() => (base ? localizeArticle(base, lang) : undefined), [base, lang]);
+  const paramId = Number(id);
+  const { t, lang } = useI18n();
+  const [currentId, setCurrentId] = useState(() => (Number.isFinite(paramId) ? paramId : 1));
+  const [seenParam, setSeenParam] = useState(paramId);
 
-  const { markRead, isPacked, togglePack, settings } = useAppState();
-  const [speaking, setSpeaking] = useState(false);
-  const [shareNote, setShareNote] = useState('');
+  if (Number.isFinite(paramId) && paramId !== seenParam) {
+    setSeenParam(paramId);
+    setCurrentId(paramId);
+  }
 
-  useEffect(() => {
-    if (article) markRead(article.id);
-  }, [article, markRead]);
+  const index = articles.findIndex((a) => a.id === currentId);
+  const prevId = index > 0 ? articles[index - 1].id : null;
+  const nextId = index >= 0 && index < articles.length - 1 ? articles[index + 1].id : null;
 
-  useEffect(() => () => stopSpeaking(), []);
+  const onSettled = useCallback(
+    (next: number) => {
+      setCurrentId(next);
+      router.setParams({ id: String(next) });
+    },
+    [router],
+  );
 
-  useEffect(() => {
-    // Reset the read-aloud control and halt the speech engine when the article changes.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSpeaking(false);
-    stopSpeaking();
-  }, [articleId]);
-
-  const onToggleSpeak = useCallback(() => {
-    if (!article) return;
-    if (speaking) {
-      stopSpeaking();
-      setSpeaking(false);
-      return;
+  const localized = useMemo(() => {
+    const map = new Map<number, ReturnType<typeof localizeArticle>>();
+    for (const idKey of [prevId, currentId, nextId]) {
+      if (idKey == null) continue;
+      const base = articleById.get(idKey);
+      if (base) map.set(idKey, localizeArticle(base, lang));
     }
-    const text = `${t('article')} ${article.id}. ${article.title} ${article.body.join(' ')}`;
-    speak(
-      text,
-      settings.ttsRate,
-      {
-        onStart: () => setSpeaking(true),
-        onDone: () => setSpeaking(false),
-      },
-      { lang: speech, muted: !settings.soundOn },
-    );
-  }, [article, speaking, settings.ttsRate, settings.soundOn, speech, t]);
+    return map;
+  }, [currentId, lang, nextId, prevId]);
 
-  const onShare = useCallback(async () => {
-    if (!article) return;
-    const message = `${t('appName')} — ${t('article')} ${article.id}\n\n“${article.title}”\n\n${article.body.join('\n\n')}`;
-    const result = await shareText(`${t('article')} ${article.id}`, message);
-    if (result === 'copied') {
-      setShareNote(t('copied'));
-      setTimeout(() => setShareNote(''), 2000);
-    }
-  }, [article, t]);
+  const current = localized.get(currentId);
 
-  if (!article) {
+  if (!current) {
     return (
       <Screen>
         <View style={styles.missing}>
@@ -80,149 +79,28 @@ export default function ArticleScreen() {
     );
   }
 
-  const packed = isPacked(article.id);
-  const category = localizeCategory(article.category, lang);
-  const index = articles.findIndex((a) => a.id === article.id);
-  const prev = index > 0 ? articles[index - 1] : null;
-  const next = index < articles.length - 1 ? articles[index + 1] : null;
-
   return (
     <Screen edges={['left', 'right', 'bottom']}>
-      <Stack.Screen options={{ title: `${t('article')} ${article.id}` }} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.metaRow}>
-          <View style={[styles.numberBadge, { backgroundColor: theme.tint }]}>
-            <ThemedText type="smallBold" style={{ color: theme.onTint }}>
-              {t('article')} {article.id}
-            </ThemedText>
-          </View>
-          <View style={[styles.categoryTag, { borderColor: theme.border }]}>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
-              {category?.name}
-            </ThemedText>
-          </View>
-        </View>
-
-        <ThemedText type="cursive" style={styles.title}>
-          {article.title}
-        </ThemedText>
-
-        <View style={styles.actions}>
-          <IconButton
-            icon={packed ? 'bookmark' : 'bookmark-outline'}
-            active={packed}
-            accessibilityLabel={packed ? t('removeFromPack') : t('addToPack')}
-            onPress={() => togglePack(article.id)}
-          />
-          {isTtsAvailable() ? (
-            <IconButton
-              icon={speaking ? 'stop' : 'volume-high'}
-              active={speaking}
-              accessibilityLabel={speaking ? t('stopReadingAloud') : t('readAloud')}
-              onPress={onToggleSpeak}
-            />
-          ) : null}
-          <IconButton icon="share-outline" accessibilityLabel={t('shareThisArticle')} onPress={onShare} />
-        </View>
-        {shareNote ? (
-          <ThemedText type="small" style={{ color: theme.tint }}>
-            {shareNote}
-          </ThemedText>
-        ) : null}
-
-        <View style={styles.body}>
-          {article.body.map((paragraph, i) => (
-            <ThemedText key={i} type="body" style={styles.paragraph}>
-              {paragraph}
-            </ThemedText>
-          ))}
-        </View>
-
-        <View style={styles.nav}>
-          <NavButton
-            direction="prev"
-            label={prev ? `${t('article')} ${prev.id}` : ''}
-            previousLabel={t('previous')}
-            nextLabel={t('next')}
-            disabled={!prev}
-            onPress={() => prev && router.replace(`/article/${prev.id}`)}
-          />
-          <NavButton
-            direction="next"
-            label={next ? `${t('article')} ${next.id}` : ''}
-            previousLabel={t('previous')}
-            nextLabel={t('next')}
-            disabled={!next}
-            onPress={() => next && router.replace(`/article/${next.id}`)}
-          />
-        </View>
-      </ScrollView>
+      <Stack.Screen
+        options={{
+          title: `${t('article')} ${currentId}`,
+          headerRight: () => <ArticleCoverButton />,
+        }}
+      />
+      <BookPager
+        currentId={currentId}
+        prevId={prevId}
+        nextId={nextId}
+        onSettled={onSettled}
+        renderPage={(pageId) => {
+          const article = localized.get(pageId);
+          return article ? <ArticlePage article={article} active={pageId === currentId} /> : null;
+        }}
+      />
     </Screen>
   );
 }
 
-function NavButton({
-  direction,
-  label,
-  previousLabel,
-  nextLabel,
-  disabled,
-  onPress,
-}: {
-  direction: 'prev' | 'next';
-  label: string;
-  previousLabel: string;
-  nextLabel: string;
-  disabled: boolean;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.navButton,
-        {
-          borderColor: theme.border,
-          backgroundColor: theme.backgroundElement,
-          opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
-          alignItems: direction === 'prev' ? 'flex-start' : 'flex-end',
-        },
-      ]}
-    >
-      <ThemedText type="small" style={{ color: theme.textSecondary }}>
-        {direction === 'prev' ? previousLabel : nextLabel}
-      </ThemedText>
-      <View style={styles.navLabel}>
-        {direction === 'prev' ? (
-          <Ionicons name="arrow-back" size={16} color={theme.text} />
-        ) : null}
-        <ThemedText type="smallBold">{label || '—'}</ThemedText>
-        {direction === 'next' ? (
-          <Ionicons name="arrow-forward" size={16} color={theme.text} />
-        ) : null}
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.six,
-    gap: Spacing.three,
-  },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  numberBadge: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.one, borderRadius: Radius.pill },
-  categoryTag: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.one, borderRadius: Radius.pill, borderWidth: 1 },
-  title: { fontSize: 32, lineHeight: 40 },
-  actions: { flexDirection: 'row', gap: Spacing.two },
-  body: { gap: Spacing.three, marginTop: Spacing.two },
-  paragraph: {},
-  nav: { flexDirection: 'row', gap: Spacing.three, marginTop: Spacing.four },
-  navButton: { flex: 1, gap: 2, padding: Spacing.three, borderRadius: Radius.md, borderWidth: 1 },
-  navLabel: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.three },
 });

@@ -14,21 +14,14 @@ import {
   configureNotificationHandler,
   parseArticleIdFromNotification,
 } from '@/lib/notifications';
+import { CoverProvider, useCover } from '@/state/cover';
 import { AppStateProvider, useAppState } from '@/state/store';
 
 configureNotificationHandler();
 
-function RootNavigator() {
-  const scheme = useResolvedScheme();
-  const theme = useTheme();
-  const { hydrated, setFontsReady } = useAppState();
-  const [fontsLoaded, fontError] = useBookFonts();
-  const { t } = useI18n();
+function NotificationBridge() {
   const router = useRouter();
-
-  useEffect(() => {
-    setFontsReady(Boolean(fontsLoaded));
-  }, [fontsLoaded, setFontsReady]);
+  const { openToArticle } = useCover();
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -42,10 +35,24 @@ function RootNavigator() {
     if (!Notifications) return;
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const id = parseArticleIdFromNotification(response.notification.request.content.data);
-      if (id) router.push(`/article/${id}`);
+      if (id) openToArticle(id);
     });
     return () => sub.remove();
-  }, [router]);
+  }, [openToArticle, router]);
+
+  return null;
+}
+
+function RootNavigator() {
+  const scheme = useResolvedScheme();
+  const theme = useTheme();
+  const { hydrated, setFontsReady } = useAppState();
+  const [fontsLoaded, fontError] = useBookFonts();
+  const { t } = useI18n();
+
+  useEffect(() => {
+    setFontsReady(Boolean(fontsLoaded));
+  }, [fontsLoaded, setFontsReady]);
 
   const navTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const themed = {
@@ -66,23 +73,28 @@ function RootNavigator() {
 
   return (
     <ThemeProvider value={themed}>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: Leather.dark },
-          headerTintColor: Gold.bright,
-          headerTitleStyle: { color: Gold.bright },
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: theme.background },
-        }}
-      >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="intro" options={{ title: t('introduction') }} />
-        <Stack.Screen name="article/[id]" options={{ title: '' }} />
-        <Stack.Screen name="ask" options={{ title: t('askABro'), presentation: 'modal' }} />
-        <Stack.Screen name="glance" options={{ title: t('theCode'), presentation: 'modal' }} />
-      </Stack>
+      <CoverProvider>
+        <NotificationBridge />
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: Leather.dark },
+            headerTintColor: Gold.bright,
+            headerTitleStyle: { color: Gold.bright },
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: theme.background },
+            animation: 'none',
+            animationDuration: 0,
+          }}
+        >
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="intro" options={{ title: t('introduction') }} />
+          <Stack.Screen name="article/[id]" options={{ title: '' }} />
+          <Stack.Screen name="ask" options={{ title: t('askABro'), presentation: 'modal' }} />
+          <Stack.Screen name="glance" options={{ title: t('theCode'), presentation: 'modal' }} />
+        </Stack>
+      </CoverProvider>
     </ThemeProvider>
   );
 }
