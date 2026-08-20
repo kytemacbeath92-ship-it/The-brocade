@@ -5,31 +5,37 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Screen } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { APP_SUBTITLE, APP_TAGLINE, intro } from '@/data/articles';
+import { localizeIntro } from '@/i18n/localize';
+import { useI18n } from '@/i18n/use-i18n';
 
 export default function IntroScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { t, lang } = useI18n();
+  const copy = localizeIntro(lang);
+
   return (
     <Screen edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <ThemedText type="small" style={{ color: theme.tint, letterSpacing: 2 }}>
-          PAGE 1 · {APP_SUBTITLE.toUpperCase()}
+          {t('page1')} · {t('subtitle').toUpperCase()}
         </ThemedText>
-        <ThemedText type="title">{intro.title}</ThemedText>
+        <ThemedText type="cursive" style={{ fontSize: 36, lineHeight: 44, color: theme.accent }}>
+          {copy.title}
+        </ThemedText>
         <ThemedText type="serif" style={{ color: theme.textSecondary }}>
-          {APP_TAGLINE}
+          {t('tagline')}
         </ThemedText>
 
         <View style={styles.body}>
-          {intro.body.map((paragraph, i) => (
+          {copy.body.map((paragraph, i) => (
             <ThemedText key={i} type="body">
               {paragraph}
             </ThemedText>
           ))}
         </View>
 
-        <Button label="Begin with Article 1" icon="arrow-forward" onPress={() => router.push('/article/1')} />
+        <Button label={t('beginWithArticle1')} icon="arrow-forward" onPress={() => router.push('/article/1')} />
       </ScrollView>
     </Screen>
   );

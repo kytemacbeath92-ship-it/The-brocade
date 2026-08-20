@@ -10,12 +10,18 @@ import {
   type ReactNode,
 } from 'react';
 
+import { isLanguageCode, type LanguageCode } from '@/i18n/languages';
+import { syncDailyNotifications } from '@/lib/notifications';
+
 export type ThemeMode = 'system' | 'light' | 'dark';
 
 export type Settings = {
   themeMode: ThemeMode;
   fontScale: number;
   ttsRate: number;
+  language: LanguageCode;
+  soundOn: boolean;
+  dailyNotifications: boolean;
 };
 
 type PersistedState = {
@@ -25,12 +31,15 @@ type PersistedState = {
   settings: Settings;
 };
 
-const STORAGE_KEY = 'brocode/state/v1';
+const STORAGE_KEY = 'brocode/state/v2';
 
 const DEFAULT_SETTINGS: Settings = {
   themeMode: 'system',
   fontScale: 1,
   ttsRate: 1,
+  language: 'en',
+  soundOn: true,
+  dailyNotifications: false,
 };
 
 const DEFAULT_STATE: PersistedState = {
@@ -42,6 +51,8 @@ const DEFAULT_STATE: PersistedState = {
 
 type AppStateContextValue = {
   hydrated: boolean;
+  fontsReady: boolean;
+  setFontsReady: (ready: boolean) => void;
   readIds: Set<number>;
   packIds: Set<number>;
   lastReadId: number | null;
@@ -57,23 +68,35 @@ type AppStateContextValue = {
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 
+function sanitizeSettings(raw: Partial<Settings> | undefined): Settings {
+  const merged = { ...DEFAULT_SETTINGS, ...(raw ?? {}) };
+  return {
+    ...merged,
+    language: isLanguageCode(merged.language) ? merged.language : 'en',
+    soundOn: merged.soundOn !== false,
+    dailyNotifications: Boolean(merged.dailyNotifications),
+  };
+}
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
   const [state, setState] = useState<PersistedState>(DEFAULT_STATE);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notifySync = useRef(0);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        const raw = (await AsyncStorage.getItem(STORAGE_KEY)) ?? (await AsyncStorage.getItem('brocode/state/v1'));
         if (active && raw) {
           const parsed = JSON.parse(raw) as Partial<PersistedState>;
           setState({
             readIds: parsed.readIds ?? [],
             packIds: parsed.packIds ?? [],
             lastReadId: parsed.lastReadId ?? null,
-            settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
+            settings: sanitizeSettings(parsed.settings),
           });
         }
       } catch {
@@ -97,6 +120,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, [state, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const token = ++notifySync.current;
+    syncDailyNotifications(state.settings.dailyNotifications, state.settings.language)
+      .then((ok) => {
+        if (!ok && token === notifySync.current && state.settings.dailyNotifications) {
+          setState((prev) => ({
+            ...prev,
+            settings: { ...prev.settings, dailyNotifications: false },
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [hydrated, state.settings.dailyNotifications, state.settings.language]);
 
   const readSet = useMemo(() => new Set(state.readIds), [state.readIds]);
   const packSet = useMemo(() => new Set(state.packIds), [state.packIds]);
@@ -143,6 +181,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppStateContextValue>(
     () => ({
       hydrated,
+      fontsReady,
+      setFontsReady,
       readIds: readSet,
       packIds: packSet,
       lastReadId: state.lastReadId,
@@ -155,7 +195,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       updateSettings,
       resetProgress,
     }),
-    [hydrated, readSet, packSet, state.lastReadId, state.settings, markRead, toggleRead, togglePack, updateSettings, resetProgress],
+    [
+      hydrated,
+      fontsReady,
+      readSet,
+      packSet,
+      state.lastReadId,
+      state.settings,
+      markRead,
+      toggleRead,
+      togglePack,
+      updateSettings,
+      resetProgress,
+    ],
   );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  Switch,
   View,
   type StyleProp,
   type ViewStyle,
@@ -11,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Gold, Leather, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export function Screen({
@@ -25,19 +27,36 @@ export function Screen({
 }) {
   const theme = useTheme();
   return (
-    <SafeAreaView edges={edges} style={[{ flex: 1, backgroundColor: theme.background }, style]}>
-      <View style={styles.centered}>
-        <View style={styles.constrained}>{children}</View>
-      </View>
-    </SafeAreaView>
+    <View style={{ flex: 1, backgroundColor: Leather.dark }}>
+      <LinearGradient
+        colors={[Leather.deep, Leather.mid, Leather.dark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <SafeAreaView edges={edges} style={[{ flex: 1 }, style]}>
+        <View style={styles.centered}>
+          <View
+            style={[
+              styles.page,
+              {
+                backgroundColor: theme.background,
+                borderColor: Gold.foil,
+              },
+            ]}
+          >
+            {children}
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 export function Loading() {
-  const theme = useTheme();
   return (
-    <View style={[styles.loading, { backgroundColor: theme.background }]}>
-      <ActivityIndicator color={theme.tint} />
+    <View style={[styles.loading, { backgroundColor: Leather.dark }]}>
+      <ActivityIndicator color={Gold.foil} />
     </View>
   );
 }
@@ -195,8 +214,8 @@ export function SectionHeader({
   const theme = useTheme();
   return (
     <View style={styles.sectionHeader}>
-      <ThemedText type="small" style={{ color: theme.textSecondary, letterSpacing: 1.2 }}>
-        {title.toUpperCase()}
+      <ThemedText type="small" style={{ color: theme.accent, letterSpacing: 1.4, fontStyle: 'italic' }}>
+        {title}
       </ThemedText>
       {actionLabel && onAction ? (
         <Pressable onPress={onAction}>
@@ -209,14 +228,42 @@ export function SectionHeader({
   );
 }
 
+export function GoldToggle({
+  value,
+  onValueChange,
+  accessibilityLabel,
+}: {
+  value: boolean;
+  onValueChange: (next: boolean) => void;
+  accessibilityLabel: string;
+}) {
+  return (
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      accessibilityLabel={accessibilityLabel}
+      trackColor={{ false: '#5A2A2A', true: Gold.foil }}
+      thumbColor={value ? Gold.bright : '#F4E6C3'}
+      ios_backgroundColor="#5A2A2A"
+    />
+  );
+}
+
 export function Divider() {
   const theme = useTheme();
   return <View style={{ height: 1, backgroundColor: theme.border }} />;
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, alignItems: 'center' },
-  constrained: { flex: 1, width: '100%', maxWidth: MaxContentWidth },
+  centered: { flex: 1, alignItems: 'center', paddingHorizontal: 8, paddingBottom: 8 },
+  page: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+  },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   card: {
     borderRadius: Radius.md,

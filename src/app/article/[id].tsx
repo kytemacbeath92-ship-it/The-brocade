@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconButton, Screen } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { APP_NAME, articleById, articles, categoryById } from '@/data/articles';
+import { articleById, articles } from '@/data/articles';
+import { localizeArticle, localizeCategory } from '@/i18n/localize';
+import { useI18n } from '@/i18n/use-i18n';
 import { shareText } from '@/lib/share';
 import { isTtsAvailable, speak, stopSpeaking } from '@/lib/tts';
 import { useAppState } from '@/state/store';
@@ -17,7 +19,9 @@ export default function ArticleScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const articleId = Number(id);
-  const article = articleById.get(articleId);
+  const { t, lang, speech } = useI18n();
+  const base = articleById.get(articleId);
+  const article = useMemo(() => (base ? localizeArticle(base, lang) : undefined), [base, lang]);
 
   const { markRead, isPacked, togglePack, settings } = useAppState();
   const [speaking, setSpeaking] = useState(false);
@@ -43,28 +47,33 @@ export default function ArticleScreen() {
       setSpeaking(false);
       return;
     }
-    const text = `Article ${article.id}. ${article.title} ${article.body.join(' ')}`;
-    speak(text, settings.ttsRate, {
-      onStart: () => setSpeaking(true),
-      onDone: () => setSpeaking(false),
-    });
-  }, [article, speaking, settings.ttsRate]);
+    const text = `${t('article')} ${article.id}. ${article.title} ${article.body.join(' ')}`;
+    speak(
+      text,
+      settings.ttsRate,
+      {
+        onStart: () => setSpeaking(true),
+        onDone: () => setSpeaking(false),
+      },
+      { lang: speech, muted: !settings.soundOn },
+    );
+  }, [article, speaking, settings.ttsRate, settings.soundOn, speech, t]);
 
   const onShare = useCallback(async () => {
     if (!article) return;
-    const message = `${APP_NAME} — Article ${article.id}\n\n“${article.title}”\n\n${article.body.join('\n\n')}`;
-    const result = await shareText(`Article ${article.id}`, message);
+    const message = `${t('appName')} — ${t('article')} ${article.id}\n\n“${article.title}”\n\n${article.body.join('\n\n')}`;
+    const result = await shareText(`${t('article')} ${article.id}`, message);
     if (result === 'copied') {
-      setShareNote('Copied to clipboard');
+      setShareNote(t('copied'));
       setTimeout(() => setShareNote(''), 2000);
     }
-  }, [article]);
+  }, [article, t]);
 
   if (!article) {
     return (
       <Screen>
         <View style={styles.missing}>
-          <ThemedText type="serif">Article not found</ThemedText>
+          <ThemedText type="serif">{t('articleNotFound')}</ThemedText>
           <IconButton icon="arrow-back" accessibilityLabel="Go back" onPress={() => router.back()} />
         </View>
       </Screen>
@@ -72,19 +81,19 @@ export default function ArticleScreen() {
   }
 
   const packed = isPacked(article.id);
-  const category = categoryById.get(article.category);
+  const category = localizeCategory(article.category, lang);
   const index = articles.findIndex((a) => a.id === article.id);
   const prev = index > 0 ? articles[index - 1] : null;
   const next = index < articles.length - 1 ? articles[index + 1] : null;
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>
-      <Stack.Screen options={{ title: `Article ${article.id}` }} />
+      <Stack.Screen options={{ title: `${t('article')} ${article.id}` }} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.metaRow}>
           <View style={[styles.numberBadge, { backgroundColor: theme.tint }]}>
             <ThemedText type="smallBold" style={{ color: theme.onTint }}>
-              Article {article.id}
+              {t('article')} {article.id}
             </ThemedText>
           </View>
           <View style={[styles.categoryTag, { borderColor: theme.border }]}>
@@ -94,7 +103,7 @@ export default function ArticleScreen() {
           </View>
         </View>
 
-        <ThemedText type="title" style={styles.title}>
+        <ThemedText type="cursive" style={styles.title}>
           {article.title}
         </ThemedText>
 
@@ -102,18 +111,18 @@ export default function ArticleScreen() {
           <IconButton
             icon={packed ? 'bookmark' : 'bookmark-outline'}
             active={packed}
-            accessibilityLabel={packed ? 'Remove from Pack' : 'Add to Pack'}
+            accessibilityLabel={packed ? t('removeFromPack') : t('addToPack')}
             onPress={() => togglePack(article.id)}
           />
           {isTtsAvailable() ? (
             <IconButton
               icon={speaking ? 'stop' : 'volume-high'}
               active={speaking}
-              accessibilityLabel={speaking ? 'Stop reading aloud' : 'Read aloud'}
+              accessibilityLabel={speaking ? t('stopReadingAloud') : t('readAloud')}
               onPress={onToggleSpeak}
             />
           ) : null}
-          <IconButton icon="share-outline" accessibilityLabel="Share this article" onPress={onShare} />
+          <IconButton icon="share-outline" accessibilityLabel={t('shareThisArticle')} onPress={onShare} />
         </View>
         {shareNote ? (
           <ThemedText type="small" style={{ color: theme.tint }}>
@@ -132,13 +141,17 @@ export default function ArticleScreen() {
         <View style={styles.nav}>
           <NavButton
             direction="prev"
-            label={prev ? `Article ${prev.id}` : ''}
+            label={prev ? `${t('article')} ${prev.id}` : ''}
+            previousLabel={t('previous')}
+            nextLabel={t('next')}
             disabled={!prev}
             onPress={() => prev && router.replace(`/article/${prev.id}`)}
           />
           <NavButton
             direction="next"
-            label={next ? `Article ${next.id}` : ''}
+            label={next ? `${t('article')} ${next.id}` : ''}
+            previousLabel={t('previous')}
+            nextLabel={t('next')}
             disabled={!next}
             onPress={() => next && router.replace(`/article/${next.id}`)}
           />
@@ -151,11 +164,15 @@ export default function ArticleScreen() {
 function NavButton({
   direction,
   label,
+  previousLabel,
+  nextLabel,
   disabled,
   onPress,
 }: {
   direction: 'prev' | 'next';
   label: string;
+  previousLabel: string;
+  nextLabel: string;
   disabled: boolean;
   onPress: () => void;
 }) {
@@ -175,7 +192,7 @@ function NavButton({
       ]}
     >
       <ThemedText type="small" style={{ color: theme.textSecondary }}>
-        {direction === 'prev' ? 'Previous' : 'Next'}
+        {direction === 'prev' ? previousLabel : nextLabel}
       </ThemedText>
       <View style={styles.navLabel}>
         {direction === 'prev' ? (
@@ -200,7 +217,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   numberBadge: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.one, borderRadius: Radius.pill },
   categoryTag: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.one, borderRadius: Radius.pill, borderWidth: 1 },
-  title: { lineHeight: 42 },
+  title: { fontSize: 32, lineHeight: 40 },
   actions: { flexDirection: 'row', gap: Spacing.two },
   body: { gap: Spacing.three, marginTop: Spacing.two },
   paragraph: {},

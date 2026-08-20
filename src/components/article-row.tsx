@@ -5,16 +5,19 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { categoryById, type Article } from '@/data/articles';
+import { localizeCategory } from '@/i18n/localize';
+import { useI18n } from '@/i18n/use-i18n';
+import { type Article } from '@/data/articles';
 import { useAppState } from '@/state/store';
 
 export function ArticleRow({ article }: { article: Article }) {
   const theme = useTheme();
   const router = useRouter();
   const { isRead, isPacked, togglePack } = useAppState();
+  const { t, lang } = useI18n();
   const read = isRead(article.id);
   const packed = isPacked(article.id);
-  const category = categoryById.get(article.category);
+  const category = localizeCategory(article.category, lang);
 
   return (
     <Pressable
@@ -36,7 +39,7 @@ export function ArticleRow({ article }: { article: Article }) {
       </View>
 
       <View style={styles.middle}>
-        <ThemedText type="smallBold" numberOfLines={2}>
+        <ThemedText type="cursive" numberOfLines={2} style={{ fontSize: 20, lineHeight: 26 }}>
           {article.title}
         </ThemedText>
         <View style={styles.metaRow}>
@@ -44,7 +47,7 @@ export function ArticleRow({ article }: { article: Article }) {
             <View style={styles.metaItem}>
               <Ionicons name="checkmark-circle" size={13} color={theme.success} />
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Read
+                {t('read')}
               </ThemedText>
             </View>
           ) : null}
@@ -57,7 +60,7 @@ export function ArticleRow({ article }: { article: Article }) {
       <Pressable
         hitSlop={10}
         accessibilityRole="button"
-        accessibilityLabel={packed ? 'Remove from your pack' : 'Add to your pack'}
+        accessibilityLabel={packed ? t('removeFromPack') : t('addToPack')}
         onPress={() => togglePack(article.id)}
         style={styles.bookmark}
       >

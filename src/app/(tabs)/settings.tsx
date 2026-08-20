@@ -1,11 +1,13 @@
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Card, Chip, IconButton, Screen, SectionHeader } from '@/components/ui';
+import { Button, Card, Chip, IconButton, Screen, SectionHeader } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { articles } from '@/data/articles';
+import { useI18n } from '@/i18n/use-i18n';
 import { speak, stopSpeaking } from '@/lib/tts';
 import { useAppState, type ThemeMode } from '@/state/store';
 
@@ -16,7 +18,9 @@ const RATE_MAX = 1.6;
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const { settings, updateSettings, readIds, resetProgress } = useAppState();
+  const { t, speech } = useI18n();
 
   const clamp = (v: number, min: number, max: number) =>
     Math.round(Math.max(min, Math.min(max, v)) * 100) / 100;
@@ -26,29 +30,30 @@ export default function SettingsScreen() {
       resetProgress();
     };
     if (Platform.OS === 'web') {
-      // Alert on web only supports a single button, so reset directly.
       doReset();
       return;
     }
-    Alert.alert('Reset reading progress?', 'This clears which articles you have marked as read. Your Pack is kept.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: doReset },
+    Alert.alert(t('resetProgressTitle'), t('resetProgressBody'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('reset'), style: 'destructive', onPress: doReset },
     ]);
   };
+
+  const themeLabel = (mode: ThemeMode) => t(mode);
 
   return (
     <Screen edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View>
-          <SectionHeader title="Appearance" />
+          <SectionHeader title={t('appearance')} />
           <Card>
-            <ThemedText type="smallBold">Theme</ThemedText>
+            <ThemedText type="smallBold">{t('theme')}</ThemedText>
             <View style={{ height: Spacing.two }} />
             <View style={styles.row}>
               {(['system', 'light', 'dark'] as ThemeMode[]).map((mode) => (
                 <Chip
                   key={mode}
-                  label={mode[0].toUpperCase() + mode.slice(1)}
+                  label={themeLabel(mode)}
                   selected={settings.themeMode === mode}
                   onPress={() => updateSettings({ themeMode: mode })}
                 />
@@ -58,7 +63,7 @@ export default function SettingsScreen() {
             <View style={{ height: Spacing.three }} />
             <View style={styles.stepperRow}>
               <View>
-                <ThemedText type="smallBold">Text size</ThemedText>
+                <ThemedText type="smallBold">{t('textSize')}</ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
                   {Math.round(settings.fontScale * 100)}%
                 </ThemedText>
@@ -80,11 +85,11 @@ export default function SettingsScreen() {
         </View>
 
         <View>
-          <SectionHeader title="Read aloud" />
+          <SectionHeader title={t('readAloud')} />
           <Card>
             <View style={styles.stepperRow}>
               <View>
-                <ThemedText type="smallBold">Speech rate</ThemedText>
+                <ThemedText type="smallBold">{t('speechRate')}</ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
                   {settings.ttsRate.toFixed(2)}×
                 </ThemedText>
@@ -105,7 +110,7 @@ export default function SettingsScreen() {
                   accessibilityLabel="Preview speech rate"
                   onPress={() => {
                     stopSpeaking();
-                    speak('A bro reads the Code aloud, at just the right pace.', settings.ttsRate);
+                    speak(t('tagline'), settings.ttsRate, {}, { lang: speech, muted: !settings.soundOn });
                   }}
                 />
               </View>
@@ -114,18 +119,20 @@ export default function SettingsScreen() {
         </View>
 
         <View>
-          <SectionHeader title="Progress" />
+          <SectionHeader title={t('progress')} />
           <Card>
             <ThemedText type="body">
-              You have read {readIds.size} of {articles.length} articles.
+              {t('youHaveRead', { read: readIds.size, total: articles.length })}
             </ThemedText>
             <View style={{ height: Spacing.three }} />
-            <Chip label="Reset reading progress" onPress={confirmReset} />
+            <Chip label={t('resetProgress')} onPress={confirmReset} />
           </Card>
         </View>
 
-        <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: 'center' }}>
-          The Bro Code · v{Constants.expoConfig?.version ?? '1.0.0'}
+        <Button label={t('askABro')} icon="chatbubbles" variant="secondary" onPress={() => router.push('/ask')} />
+
+        <ThemedText type="cursive" style={{ color: theme.textSecondary, textAlign: 'center' }}>
+          {t('appName')} · v{Constants.expoConfig?.version ?? '1.0.0'}
         </ThemedText>
       </ScrollView>
     </Screen>

@@ -1,9 +1,17 @@
 :root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
+  --font-display: Cinzel_700Bold, Palatino Linotype, Palatino, serif;
+  --font-display-bold: Cinzel_700Bold, Palatino Linotype, Palatino, serif;
+  --font-cursive: GreatVibes_400Regular, 'Snell Roundhand', 'Apple Chancery', cursive;
+  --font-serif: CormorantGaramond_400Regular, Georgia, 'Times New Roman', serif;
+  --font-serif-italic: CormorantGaramond_400Regular_Italic, Georgia, 'Times New Roman', serif;
+  --font-serif-bold: CormorantGaramond_700Bold, Georgia, 'Times New Roman', serif;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-rounded: GreatVibes_400Regular, 'Snell Roundhand', cursive;
+}
+
+html,
+body,
+#root {
+  background: #4a0c0c;
 }

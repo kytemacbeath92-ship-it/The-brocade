@@ -1,17 +1,16 @@
 import { Platform } from 'react-native';
 
-// expo-speech is a native module; only require it off web.
+export type SpeakHandlers = {
+  onStart?: () => void;
+  onDone?: () => void;
+};
+
 type SpeechModule = typeof import('expo-speech');
 let Speech: SpeechModule | null = null;
 if (Platform.OS !== 'web') {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   Speech = require('expo-speech');
 }
-
-export type SpeakHandlers = {
-  onStart?: () => void;
-  onDone?: () => void;
-};
 
 function webSynth(): SpeechSynthesis | null {
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -25,13 +24,20 @@ export function isTtsAvailable(): boolean {
   return Speech !== null;
 }
 
-export function speak(text: string, rate: number, handlers: SpeakHandlers = {}): void {
+export function speak(
+  text: string,
+  rate: number,
+  handlers: SpeakHandlers = {},
+  options: { lang?: string; muted?: boolean } = {},
+): void {
+  if (options.muted) return;
   if (Platform.OS === 'web') {
     const synth = webSynth();
     if (!synth) return;
     synth.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = rate;
+    if (options.lang) utterance.lang = options.lang;
     utterance.onstart = () => handlers.onStart?.();
     utterance.onend = () => handlers.onDone?.();
     utterance.onerror = () => handlers.onDone?.();
@@ -39,7 +45,12 @@ export function speak(text: string, rate: number, handlers: SpeakHandlers = {}):
     return;
   }
   Speech?.stop();
-  Speech?.speak(text, { rate, onDone: handlers.onDone, onStopped: handlers.onDone });
+  Speech?.speak(text, {
+    rate,
+    language: options.lang,
+    onDone: handlers.onDone,
+    onStopped: handlers.onDone,
+  });
   handlers.onStart?.();
 }
 

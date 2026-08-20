@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button, Screen } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { articles, categoryById } from '@/data/articles';
+import { localizeArticles, localizeCategory } from '@/i18n/localize';
+import { useI18n } from '@/i18n/use-i18n';
 
 function randomIndex(exclude: number, length: number) {
   if (length <= 1) return 0;
@@ -20,28 +21,30 @@ function randomIndex(exclude: number, length: number) {
 export default function GlanceScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const [index, setIndex] = useState(() => Math.floor(Math.random() * articles.length));
-  const article = articles[index];
-  const category = categoryById.get(article.category);
+  const { t, lang } = useI18n();
+  const localized = useMemo(() => localizeArticles(lang), [lang]);
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * localized.length));
+  const article = localized[index] ?? localized[0];
+  const category = localizeCategory(article.category, lang);
 
   const shuffle = useCallback(() => {
-    setIndex((prev) => randomIndex(prev, articles.length));
-  }, []);
+    setIndex((prev) => randomIndex(prev, localized.length));
+  }, [localized.length]);
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>
       <View style={styles.content}>
-        <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: 'center' }}>
-          A moment of the Code, at a glance.
+        <ThemedText type="cursive" style={{ color: theme.textSecondary, textAlign: 'center' }}>
+          {t('tagline')}
         </ThemedText>
 
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <View style={[styles.badge, { backgroundColor: theme.tint }]}>
             <ThemedText type="smallBold" style={{ color: theme.onTint }}>
-              Article {article.id}
+              {t('article')} {article.id}
             </ThemedText>
           </View>
-          <ThemedText type="serif" style={styles.quote}>
+          <ThemedText type="cursive" style={styles.quote}>
             “{article.title}”
           </ThemedText>
           <ThemedText type="small" style={{ color: theme.textSecondary }}>
@@ -50,8 +53,8 @@ export default function GlanceScreen() {
         </View>
 
         <View style={styles.actions}>
-          <Button label="Another" icon="shuffle" variant="secondary" onPress={shuffle} />
-          <Button label="Read it" icon="book-outline" onPress={() => router.push(`/article/${article.id}`)} />
+          <Button label={t('next')} icon="shuffle" variant="secondary" onPress={shuffle} />
+          <Button label={t('articleSingular')} icon="book-outline" onPress={() => router.push(`/article/${article.id}`)} />
         </View>
       </View>
     </Screen>

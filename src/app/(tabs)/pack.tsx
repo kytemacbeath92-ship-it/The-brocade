@@ -8,17 +8,19 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Screen } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { articles } from '@/data/articles';
+import { localizeArticles } from '@/i18n/localize';
+import { useI18n } from '@/i18n/use-i18n';
 import { useAppState } from '@/state/store';
 
 export default function PackScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { packIds } = useAppState();
+  const { t, lang } = useI18n();
 
   const saved = useMemo(
-    () => articles.filter((a) => packIds.has(a.id)),
-    [packIds],
+    () => localizeArticles(lang).filter((a) => packIds.has(a.id)),
+    [packIds, lang],
   );
 
   if (saved.length === 0) {
@@ -26,14 +28,13 @@ export default function PackScreen() {
       <Screen edges={['left', 'right']}>
         <View style={styles.empty}>
           <Ionicons name="bookmark-outline" size={40} color={theme.textSecondary} />
-          <ThemedText type="serif" style={{ textAlign: 'center' }}>
-            Your Pack is empty
+          <ThemedText type="cursive" style={{ textAlign: 'center' }}>
+            {t('packEmptyTitle')}
           </ThemedText>
           <ThemedText type="body" style={{ color: theme.textSecondary, textAlign: 'center' }}>
-            Tap the bookmark on any article to keep it here for quick reference — your personal
-            pack of the rules that matter most to you.
+            {t('packEmptyBody')}
           </ThemedText>
-          <Button label="Browse the Code" icon="list" onPress={() => router.push('/code')} />
+          <Button label={t('browseTheCode')} icon="list" onPress={() => router.push('/code')} />
         </View>
       </Screen>
     );
@@ -49,7 +50,7 @@ export default function PackScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
-            {saved.length} saved {saved.length === 1 ? 'article' : 'articles'}
+            {saved.length} {saved.length === 1 ? t('savedArticle') : t('savedArticles')}
           </ThemedText>
         }
       />

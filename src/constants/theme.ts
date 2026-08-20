@@ -1,40 +1,60 @@
 /**
- * Brand theme for The Bro Code. Light and dark palettes share the same keys so
- * ThemedText / ThemedView can reference any color by name.
+ * Brand theme for The Bro Code: red leather covers, gold foil, cream pages.
  */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
+export const Leather = {
+  deep: '#2A0707',
+  dark: '#4A0C0C',
+  mid: '#6B1414',
+  rich: '#8B1A1A',
+  highlight: '#A32626',
+  grain: '#3D0A0A',
+} as const;
+
+export const Gold = {
+  foil: '#D4AF37',
+  bright: '#F5D76E',
+  deep: '#B8860B',
+  muted: '#C9A84C',
+  ink: '#5C4308',
+} as const;
+
 export const Colors = {
   light: {
-    text: '#211C13',
-    background: '#FAF6EC',
-    backgroundElement: '#FFFFFF',
-    backgroundSelected: '#F1E9D5',
-    textSecondary: '#6E6450',
-    tint: '#9A7B22',
-    onTint: '#FFFFFF',
-    card: '#FFFFFF',
-    border: '#E7DECB',
-    accent: '#7A5C1E',
-    danger: '#B3261E',
+    text: '#2A1408',
+    background: '#F4E6C3',
+    backgroundElement: '#FBF3DC',
+    backgroundSelected: '#E8D4A8',
+    textSecondary: '#6B4A28',
+    tint: Gold.foil,
+    onTint: '#2A0707',
+    card: '#FBF3DC',
+    border: Gold.muted,
+    accent: Gold.deep,
+    danger: '#8B1A1A',
     success: '#2E7D32',
+    leather: Leather.mid,
+    gold: Gold.foil,
   },
   dark: {
-    text: '#F4EEDD',
-    background: '#12100B',
-    backgroundElement: '#1D1A12',
-    backgroundSelected: '#2A2517',
-    textSecondary: '#B7AC93',
-    tint: '#D8B849',
-    onTint: '#12100B',
-    card: '#1A1710',
-    border: '#332C1D',
-    accent: '#E7CE77',
+    text: '#F4E6C3',
+    background: '#1C1008',
+    backgroundElement: '#2A1C10',
+    backgroundSelected: '#3A2814',
+    textSecondary: '#C9B48A',
+    tint: Gold.bright,
+    onTint: '#2A0707',
+    card: '#2A1C10',
+    border: Gold.deep,
+    accent: Gold.bright,
     danger: '#F2B8B5',
     success: '#A5D6A7',
+    leather: Leather.dark,
+    gold: Gold.bright,
   },
 } as const;
 
@@ -42,24 +62,36 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    sans: 'system-ui',
-    serif: 'ui-serif',
-    rounded: 'ui-rounded',
+    sans: 'Cinzel_400Regular',
+    serif: 'CormorantGaramond_400Regular',
+    rounded: 'GreatVibes_400Regular',
     mono: 'ui-monospace',
+    display: 'Cinzel_700Bold',
+    cursive: 'GreatVibes_400Regular',
+    serifItalic: 'CormorantGaramond_400Regular_Italic',
+    serifBold: 'CormorantGaramond_700Bold',
   },
   default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
+    sans: 'Cinzel_400Regular',
+    serif: 'CormorantGaramond_400Regular',
+    rounded: 'GreatVibes_400Regular',
     mono: 'monospace',
+    display: 'Cinzel_700Bold',
+    cursive: 'GreatVibes_400Regular',
+    serifItalic: 'CormorantGaramond_400Regular_Italic',
+    serifBold: 'CormorantGaramond_700Bold',
   },
   web: {
     sans: 'var(--font-display)',
     serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
+    rounded: 'var(--font-cursive)',
     mono: 'var(--font-mono)',
+    display: 'var(--font-display-bold)',
+    cursive: 'var(--font-cursive)',
+    serifItalic: 'var(--font-serif-italic)',
+    serifBold: 'var(--font-serif-bold)',
   },
-});
+})!;
 
 export const Spacing = {
   half: 2,
@@ -72,11 +104,10 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  sm: 10,
-  md: 16,
-  lg: 24,
+  sm: 8,
+  md: 12,
+  lg: 18,
   pill: 999,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
