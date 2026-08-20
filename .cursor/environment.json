@@ -1,0 +1,17 @@
+{
+  "name": "The Brocade",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev-server",
+      "command": "npm run dev",
+      "description": "Runs the Express dev server (auto-restart on change) on port 3000."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    }
+  ]
+}
