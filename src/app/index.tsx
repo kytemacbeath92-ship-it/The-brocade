@@ -53,9 +53,9 @@ export default function CoverScreen() {
         end={{ x: 0.8, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <View pointerEvents="none" style={styles.spine} />
+      <View style={styles.spine} />
 
-      <Pressable
+      <View
         style={[
           styles.frame,
           {
@@ -63,12 +63,15 @@ export default function CoverScreen() {
             marginBottom: Math.max(insets.bottom, 12),
           },
         ]}
-        onPress={openBook}
-        accessibilityRole="button"
-        accessibilityLabel={t('tapAnywhere')}
       >
-        <View style={styles.innerFrame} pointerEvents="box-none">
-          <View style={styles.topBar} pointerEvents="box-none">
+        <Pressable
+          onPress={openBook}
+          style={StyleSheet.absoluteFill}
+          accessibilityRole="button"
+          accessibilityLabel={t('tapAnywhere')}
+        />
+        <View style={styles.innerFrame}>
+          <View style={styles.topBar}>
             <Pressable
               onPress={() => setLangOpen(true)}
               style={({ pressed }) => [styles.langButton, pressed && styles.pressed]}
@@ -98,7 +101,7 @@ export default function CoverScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.hero} pointerEvents="none">
+          <Pressable onPress={openBook} style={styles.hero} accessibilityRole="button" accessibilityLabel={t('tapAnywhere')}>
             <ThemedText type="small" style={[styles.goldText, styles.subtitle]}>
               {t('subtitle')}
             </ThemedText>
@@ -108,30 +111,25 @@ export default function CoverScreen() {
             <ThemedText type="cursive" style={styles.coverCursive}>
               {t('tagline')}
             </ThemedText>
-          </View>
+          </Pressable>
 
-          <View style={styles.bottomBlock} pointerEvents="box-none">
-            <ThemedText type="goldCursive" style={styles.tapHint} pointerEvents="none">
-              {t('tapAnywhere')}
-            </ThemedText>
+          <View style={styles.bottomBlock}>
+            <Pressable onPress={openBook} accessibilityRole="button" accessibilityLabel={t('tapAnywhere')}>
+              <ThemedText type="goldCursive" style={styles.tapHint}>
+                {t('tapAnywhere')}
+              </ThemedText>
+            </Pressable>
             <View style={styles.goldLine} />
 
-            <View
-              style={styles.notifyRow}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: settings.dailyNotifications }}
-              accessibilityLabel={t('dailyNotifications')}
-            >
+            <View style={styles.notifyRow}>
               <ThemedText type="small" style={styles.goldText}>
                 {t('dailyNotifications')}
               </ThemedText>
-              <View onStartShouldSetResponder={() => true}>
-                <GoldToggle
-                  value={settings.dailyNotifications}
-                  onValueChange={(next) => updateSettings({ dailyNotifications: next })}
-                  accessibilityLabel={t('dailyNotifications')}
-                />
-              </View>
+              <GoldToggle
+                value={settings.dailyNotifications}
+                onValueChange={(next) => updateSettings({ dailyNotifications: next })}
+                accessibilityLabel={t('dailyNotifications')}
+              />
             </View>
 
             {todaysArticle ? (
@@ -164,7 +162,7 @@ export default function CoverScreen() {
             ) : null}
           </View>
         </View>
-      </Pressable>
+      </View>
 
       <Modal visible={langOpen} transparent animationType="fade" onRequestClose={() => setLangOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setLangOpen(false)}>
@@ -236,6 +234,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.two,
+    zIndex: 2,
   },
   langButton: {
     flexDirection: 'row',
@@ -264,6 +263,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.two,
+    zIndex: 2,
   },
   subtitle: {
     letterSpacing: 2,
@@ -274,9 +274,6 @@ const styles = StyleSheet.create({
   coverTitle: {
     color: Gold.bright,
     textAlign: 'center',
-    textShadowColor: 'rgba(245, 215, 110, 0.55)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 10,
   },
   coverCursive: {
     color: Gold.foil,
@@ -284,7 +281,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
   },
   goldText: { color: Gold.bright },
-  bottomBlock: { gap: Spacing.two },
+  bottomBlock: { gap: Spacing.two, zIndex: 2 },
   tapHint: {
     textAlign: 'center',
     color: Gold.bright,
