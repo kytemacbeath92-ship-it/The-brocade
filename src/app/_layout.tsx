@@ -1,3 +1,4 @@
+import { GreatVibes_400Regular, useFonts } from '@expo-google-fonts/great-vibes';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -11,6 +12,7 @@ function RootNavigator() {
   const scheme = useResolvedScheme();
   const theme = useTheme();
   const { hydrated } = useAppState();
+  const [fontsLoaded] = useFonts({ GreatVibes_400Regular });
 
   const navTheme = scheme === 'dark' ? DarkTheme : DefaultTheme;
   const themed = {
@@ -25,7 +27,7 @@ function RootNavigator() {
     },
   };
 
-  if (!hydrated) {
+  if (!hydrated || !fontsLoaded) {
     return <Loading />;
   }
 

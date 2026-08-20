@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Fonts } from '@/constants/theme';
 import { APP_NAME, APP_SUBTITLE, APP_TAGLINE } from '@/data/articles';
 
 const GOLD = '#E7C766';
@@ -54,7 +53,7 @@ export function BookCover() {
 
               <Ornament />
 
-              <ThemedText style={styles.title}>{APP_NAME.toUpperCase()}</ThemedText>
+              <ThemedText style={styles.title}>{APP_NAME}</ThemedText>
 
               <Ornament />
 
@@ -149,23 +148,20 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GOLD,
-    fontFamily: Fonts.serif,
-    fontSize: 40,
-    lineHeight: 46,
-    letterSpacing: 2,
+    fontFamily: 'GreatVibes_400Regular',
+    fontSize: 58,
+    lineHeight: 66,
     textAlign: 'center',
-    fontWeight: '700',
     textShadowColor: EMBOSS,
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 3,
   },
   tagline: {
     color: GOLD_BRIGHT,
-    fontFamily: Fonts.serif,
-    fontSize: 15,
-    lineHeight: 22,
+    fontFamily: 'GreatVibes_400Regular',
+    fontSize: 24,
+    lineHeight: 30,
     textAlign: 'center',
-    fontStyle: 'italic',
     textShadowColor: EMBOSS,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
