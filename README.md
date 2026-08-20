@@ -50,20 +50,48 @@ npm start          # start Metro; press i / a, or scan the QR with Expo Go on yo
 | `npm run typecheck` | TypeScript type-check (`tsc --noEmit`). |
 | `npm run lint` | Lint with `expo lint`. |
 
-## Building for the App Store & Play Store
+## Installable iOS app (EAS Build)
 
-The app is configured for [EAS Build](https://docs.expo.dev/build/introduction/) (`ios.bundleIdentifier` / `android.package` are set in `app.json`).
+A real, installable iOS app requires Apple code signing, so you need a **paid Apple Developer Program** account and a free **Expo** account. Builds run on Expo's hosted macOS builders via [EAS Build](https://docs.expo.dev/build/introduction/) (no Mac required). Build profiles are defined in `eas.json`; the bundle id is `com.thebrocode.app`.
+
+### One-time setup
 
 ```bash
 npm install -g eas-cli
-eas login
-eas build --platform ios       # requires an Apple Developer account
-eas build --platform android
-eas submit --platform ios       # submit to App Store Connect
-eas submit --platform android   # submit to Google Play
+eas login                 # Expo account
+eas init                  # links this repo to an EAS project (writes the projectId)
 ```
 
-Producing a signed iOS binary requires macOS/Xcode or EAS’s hosted macOS builders plus your Apple Developer credentials; store submission requires your App Store Connect / Google Play accounts.
+### Option A — Install on your iPhone via internal (ad-hoc) distribution
+
+Best for getting it onto your own device quickly.
+
+```bash
+eas device:create                                   # register your iPhone's UDID (follow the link/QR)
+eas build --platform ios --profile preview          # signs an ad-hoc build; Apple login handled by EAS
+```
+
+When the build finishes, EAS gives you an install URL/QR — open it in Safari on the registered iPhone to install the app directly.
+
+### Option B — TestFlight (App Store Connect)
+
+Best for wider testing / the real App Store pipeline.
+
+```bash
+eas build --platform ios --profile production
+eas submit --platform ios --latest                  # uploads to App Store Connect → TestFlight
+```
+
+### Building from CI
+
+`.github/workflows/eas-ios-build.yml` runs `eas build` on manual dispatch. Add an `EXPO_TOKEN` [access token](https://expo.dev/settings/access-tokens) as a repository secret, and configure iOS credentials in EAS once (interactively via `eas credentials`, or by providing an App Store Connect API key) so CI builds can sign non-interactively.
+
+### Android (Play Store)
+
+```bash
+eas build --platform android --profile production
+eas submit --platform android --latest
+```
 
 ## Permanent web hosting (GitHub Pages)
 
