@@ -13,9 +13,13 @@ import { localizeArticle } from '@/i18n/localize';
 import { useI18n } from '@/i18n/use-i18n';
 import { useCover } from '@/state/cover';
 
+function ArticleCoverHeader() {
+  const { closeBook } = useCover();
+  return <CoverButton onPress={closeBook} />;
+}
+
 export default function ArticleScreen() {
   const router = useRouter();
-  const { closeBook } = useCover();
   const { id } = useLocalSearchParams<{ id: string }>();
   const paramId = Number(id);
   const { t, lang } = useI18n();
@@ -67,7 +71,7 @@ export default function ArticleScreen() {
       <Stack.Screen
         options={{
           title: `${t('article')} ${currentId}`,
-          headerRight: () => <CoverButton onPress={closeBook} />,
+          headerRight: () => <ArticleCoverHeader />,
         }}
       />
       <BookPager
