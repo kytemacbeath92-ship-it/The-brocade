@@ -4,6 +4,8 @@
 
 A cross-platform mobile app (iOS + Android, plus web) built with [Expo](https://expo.dev/) and [Expo Router](https://docs.expo.dev/router/introduction/). It presents an introduction and 70 original articles of the Bro Code, each on its own scrollable page, wrapped in a set of features designed to make the Code easy to read, revisit, and live by.
 
+**Live web app:** https://kytemacbeath92-ship-it.github.io/The-brocade/ — open it on your iPhone in Safari and tap Share → “Add to Home Screen” for an app-like icon.
+
 ## Features
 
 - **Introduction (page 1)** explaining what the Bro Code is and how it helps a young bro become a worthy man of mateship.
@@ -62,6 +64,14 @@ eas submit --platform android   # submit to Google Play
 ```
 
 Producing a signed iOS binary requires macOS/Xcode or EAS’s hosted macOS builders plus your Apple Developer credentials; store submission requires your App Store Connect / Google Play accounts.
+
+## Permanent web hosting (GitHub Pages)
+
+The web build is deployed to GitHub Pages automatically by `.github/workflows/deploy-web.yml` on every push to `main` (and the app branch). It runs `expo export --platform web` with a subpath base URL and publishes `dist/`, giving a stable URL:
+
+`https://kytemacbeath92-ship-it.github.io/The-brocade/`
+
+The base URL is injected only during that build via `EXPO_BASE_URL` (see `app.config.js`); local dev, tunnels, and native builds are unaffected. If the first deploy fails to enable Pages automatically, enable it once under **Settings → Pages → Build and deployment → Source: GitHub Actions**, then re-run the workflow.
 
 ## Project structure
 
