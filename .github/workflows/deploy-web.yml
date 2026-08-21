@@ -65,7 +65,10 @@ jobs:
 
   deploy:
     needs: build
-    if: needs.build.outputs.pages_enabled == 'true'
+    # Publish only from the default branch. The github-pages environment's
+    # protection rules restrict deployments to the default branch, so deploying
+    # from a feature branch is blocked; it publishes once merged to main.
+    if: needs.build.outputs.pages_enabled == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
